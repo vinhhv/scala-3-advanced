@@ -213,13 +213,106 @@ object Futures {
     producerThread.start()
   }
 
+  /**
+   * Exercises
+   * 1) Fulfill a future IMMEDIATELY with a value.
+   * 2) In sequence: make sure the first Future has been completed before
+   *    returning the second
+   * 3) first(fa, fb) => new Future with the value of the first Future to complete
+   * 4) last(fa, fb) => new Future with the value of the LAST Future to complete
+   * 5) retry an action returning a Future until a predicate holds true
+   */
+
+  // 1
+  val immediateFuture: Future[Int] =
+    Future.successful(1) // async completion as soon as possible
+
+  def completeImmediately[A](value: A): Future[A] =
+    Future.successful(value) // synchronous
+
+  // 2
+  def inSequence[A, B](first: Future[A], second: Future[B]): Future[B] = {
+    for {
+      _     <- first
+      value <- second
+    } yield value
+  }
+
+  // 3
+  def first[A](f1: Future[A], f2: Future[A]): Future[A] = {
+    val promise = Promise[A]()
+    f1.onComplete(result1 => promise.tryComplete(result1))
+    f2.onComplete(result2 => promise.tryComplete(result2))
+
+    promise.future
+  }
+
+  // 4
+  def second[A](f1: Future[A], f2: Future[A]): Future[A] = {
+    val bothPromise = Promise[A]()
+    val lastPromise = Promise[A]()
+
+    def checkAndComplete(result: Try[A]): Unit =
+      if (!bothPromise.tryComplete(result))
+        lastPromise.complete(result)
+
+    f1.onComplete(result => checkAndComplete(result))
+    f2.onComplete(result => checkAndComplete(result))
+
+    lastPromise.future
+  }
+
+  def retryUntil[A](
+      action: () => Future[A],
+      predicate: A => Boolean
+  ): Future[A] = {
+    action().filter(predicate).recoverWith { case _ =>
+      retryUntil(action, predicate)
+    }
+  }
+
+  def testRetries(): Unit = {
+    val random = new Random()
+    val action = () =>
+      Future {
+        Thread.sleep(100)
+        val nextValue = random.nextInt(100)
+        println(s"Generated $nextValue")
+        nextValue
+      }
+
+    val predicate = (x: Int) => x < 10
+
+    retryUntil(action, predicate).foreach(finalResult =>
+      println(s"Settled at $finalResult")
+    )
+  }
+
   def main(args: Array[String]): Unit = {
     // sendMessageToBestFriend_v3("rtjvm.id.2-jane", "Hey best friend, sup")
     // println("purchasing...")
     // println(BankingApp.purchase("vinh-234", "shoes", "merchant-987", 3.56))
     // println("purchase complete")
-    demoPromises()
-    Thread.sleep(2000)
+    // demoPromises()
+
+    def slow = Future {
+      Thread.sleep(3000)
+      3
+    }
+
+    def fast = Future {
+      Thread.sleep(2000)
+      2
+    }
+
+    // println(Await.result(first(slow, fast), 5.seconds))
+    // println(Await.result(first(fast, slow), 5.seconds))
+    // println(Await.result(second(slow, fast), 5.seconds))
+    // println(Await.result(second(fast, slow), 5.seconds))
+
+    testRetries()
+
+    Thread.sleep(3000)
     executor.shutdown()
   }
 }
