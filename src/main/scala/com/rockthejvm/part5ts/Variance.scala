@@ -42,6 +42,7 @@ object Variance {
   val myVet: Vet[Dog] = new Vet[Animal] {
     override def heal(animal: Animal): Boolean = {
       println("Hey there, you're all good...")
+      true
     }
   }
   // if the vet can treat any animal, she/he can treat my dog too
@@ -65,7 +66,7 @@ object Variance {
   ] // consumes values and turns them into strings: Contravariant
   trait MyFunction[-A, +B] // similar to Function1[A, B]
 
-  val aFunction1: Function1[Int, Int] = ???
+  // val aFunction1: Function1[Int, Int] = ???
 
   // 2 - add variance modifiers to this "library"
   abstract class LList[+A] {
@@ -74,8 +75,8 @@ object Variance {
   }
 
   case object EmptyList extends LList[Nothing] {
-    override def head: A        = throw new NoSuchElementException()
-    override def tail: LList[A] = throw new NoSuchElementException()
+    override def head = throw new NoSuchElementException()
+    override def tail = throw new NoSuchElementException()
   }
 
   case class Cons[+A](override val head: A, override val tail: LList[A])
