@@ -84,11 +84,12 @@ object VariancePositions {
     def repair[B <: A](vehicle: B): B = vehicle // narrowing the type
   }
 
-  val myRepairShop: RepairShop[Car] = new RepairShop[Vehicle]
-  val myBeatupVw: Car               = new Car
-  val freshCar: Car                 = myRepairShop.repair(myBeatupVw)
-  val damangedFerrari               = new Supercar
-  val freshFerrari: Supercar        = myRepairShop.repair(damangedFerrari)
+  val myRepairShop1: RepairShop[Supercar] = new RepairShop[Vehicle]
+  val myRepairShop: RepairShop[Car]       = new RepairShop[Vehicle]
+  val myBeatupVw: Car                     = new Car
+  val freshCar: Car                       = myRepairShop.repair(myBeatupVw)
+  val damangedFerrari                     = new Supercar
+  val freshFerrari: Supercar              = myRepairShop.repair(damangedFerrari)
 
   def main(args: Array[String]): Unit = {}
 }
